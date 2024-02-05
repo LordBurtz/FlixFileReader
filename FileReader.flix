@@ -21,15 +21,6 @@ mod FileReader {
         import new java.io.FileInputStream(String): ##java.io.FileInputStream \ IO as fileInputStream;
         import new java.io.InputStreamReader(##java.io.InputStream, ##java.nio.charset.Charset): ##java.io.InputStreamReader \ {} as newInputStreamReader;
         
-        // let initBufferedReader = match buffSize {
-        //     case None =>
-        //         import new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader\ IO as bufferedReader;
-        //         bufferedReader
-        //     case Some(sz) =>
-        //         import new java.io.BufferedReader(##java.io.Reader, Int32): ##java.io.BufferedReader\ IO as bufferedReaderSized;
-        //         bufferedReaderSized(???)
-        // };
-        
         let charset = Encoding.toStandardCharset(encoding);
 
         let isReader = checked_cast(newInputStreamReader(
@@ -63,7 +54,7 @@ mod FileReader {
     def readLinesWith_(reader: FileReader, result: List[String]): List[String] \ IO =
         match FileReader.nextLine(reader) {
             case Err(_) => result
-            case Ok(line) => FileReader.readLinesWith_(reader, List.appendOne(result, line))
+            case Ok(line) => FileReader.readLinesWith_(reader, List.append(result, line :: Nil))
         }
 
     ///
