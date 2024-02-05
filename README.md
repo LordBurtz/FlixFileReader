@@ -1,6 +1,6 @@
-Ever stared at bytes your flix program just wouldn't rightly read from a file?  
-Ever wanted to just read a file line by line as it is just so convenient?  
-Say no more..
+> Why the f*** can't one simply read a file line by line in UTF-16LE encoding in flix? It can't be so *verflixt* hard.  
+> <cite> — Julius Caesar</cite>  
+<br>
 
 # FileReader.flix
 ### What?
