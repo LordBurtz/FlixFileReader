@@ -3,10 +3,10 @@
 <br>
 
 # FileReader.flix
-### What?
+## What?
 Wrapping `java.io.BufferedReader` to provide reading functionality beyond your wildest dreams. Effectively this means you can now read your files the way you want in any encoding you want, even by lines, if you want.
 
-### How?
+## How?
 Just like this
 ```scala
 def testReadingLines(): Unit \ IO = 
@@ -18,6 +18,6 @@ def testReadingLines(): Unit \ IO =
     ...
 ```
 
-### Why?
+## Why?
 To learn flix I started doing AoC 2023 but quickly ran into the issue that reading files is kinda tedious. So I began writing a solution for that problem.  
 At the same time one of my resolutions for '24 is contributing to one niche language and so here we are, first attempt.
