@@ -6,6 +6,9 @@
 */
 
 /// Represents a BufferedReader to provide an efficient and correctly encoded reading of characters into Strings
+/// Wrapping java.io.BufferedReader to provide additional functionality such as
+/// reading line by line, by character, skipping ahead, resetting, skipping
+/// while supporting all native java encodings
 pub enum FileReader(##java.io.BufferedReader)
 
 mod FileReader {
@@ -103,7 +106,14 @@ mod FileReader {
         IOError.tryCatch(_ -> {
             readIntoArray(fin, buff, offset, len)
         })
+
+    pub def skip(reader: FileReader, amount: Int64): Result[IOError, Int64] \ IO = 
+        import java.io.BufferedReader.skip(Int64): Int64 \ IO;
+        let FileReader(fin) = reader;
+        IOError.tryCatch(_ -> {
+            skip(fin, amount)
+        })
 }
 
 /// archaic test, refactor into own file
-def test(): List[String] \ IO = FileReader.readLinesWith(FileReader.buildReader("utf8.test", Encoding.UTF_8))
+// def test(): List[String] \ IO = FileReader.readLinesWith(FileReader.buildReader("utf8.test", Encoding.UTF_8))
