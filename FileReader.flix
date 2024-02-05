@@ -61,12 +61,21 @@ mod FileReader {
     pub def readLinesWith(reader: FileReader): List[String] \ IO = FileReader.readLinesWith_(reader, Nil)
    
     def readLinesWith_(reader: FileReader, result: List[String]): List[String] \ IO =
-        match FileReader.readLine(reader) {
+        match FileReader.nextLine(reader) {
             case Err(_) => result
             case Ok(line) => FileReader.readLinesWith_(reader, List.appendOne(result, line))
         }
 
-    pub def readLine(reader: FileReader): Result[IOError, String] \ IO = 
+    ///
+    /// Reads the next line from
+    ///
+    /// reader: FileReader
+    ///
+    /// @returns 
+    ///     Ok(String) containing all characters until either of (\n, \r, \r\n)
+    ///     IOError
+    ///
+    pub def nextLine(reader: FileReader): Result[IOError, String] \ IO = 
         import java.io.BufferedReader.ready(): Bool \ IO;
         import java.io.BufferedReader.readLine(): String \ IO;
         let FileReader(fin) = reader;
@@ -75,6 +84,34 @@ mod FileReader {
             result <- if (readable == false) Err(IOError.Generic("")) else 
                 IOError.tryCatch(_->{readLine(fin)})
         ) yield result
+
+    ///
+    /// Resets the reader to the latest mark
+    ///
+    pub def reset(reader: FileReader): Result[IOError, Unit] \ IO =
+        import java.io.BufferedReader.reset(): Unit \ IO;
+        let FileReader(fin) = reader;
+        IOError.tryCatch(_->{
+            reset(fin)
+        })
+
+    ///
+    /// Reads from 
+    /// reader: FileReader - into
+    /// buff: Array[Char, r] - with 
+    /// offset: Int32 - with a count of
+    /// len: Int32
+    ///
+    /// @returns Int32 as status code
+    /// refer to https://docs.oracle.com/javase/8/docs/api/java/io/BufferedReader.html#read-char:A-int-int-
+    /// really
+    ///
+    pub def read(reader: FileReader, buff: Array[Char, r], offset: Int32, len: Int32): Result[IOError, Int32] \ {IO, r} = 
+        import java.io.BufferedReader.read(Array[Char, r], Int32, Int32): Int32 \ {IO, r} as readIntoArray;
+        let FileReader(fin) = reader;
+        IOError.tryCatch(_ -> {
+            readIntoArray(fin, buff, offset, len)
+        })
 }
 
 /// archaic test, refactor into own file
