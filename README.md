@@ -9,12 +9,26 @@ Wrapping `java.io.BufferedReader` to provide reading functionality beyond your w
 ## How?
 Just like this
 ```scala
-def testReadingLines(): Unit \ IO = 
+def testReadingLines(): List[String] \ IO = 
     // Open your file (e.g. encoded in utf8) through the FileReader
-    let reader = FileReader.buildReader("utf8.test", Encoding.UTF_8);
+    let reader = FileReader.buildFromPath("utf8.test", Encoding.UTF_8);
     
     // Read all lines
-    let lines: List[String] = FileReader.readLinesWith(reader);
+    FileReader.readLinesWith(reader)
+
+
+def anotherWay(): Result[IOError, String] \ IO = 
+    forM(
+        // standard Flix File
+        file <- File.open("utf8.test", File.Mode.ReadOnly);
+
+        // build your reader from it
+        reader <- Ok(FileReader.buildFromFile(file, Encoding.UTF_8));
+
+        // read one line
+        line <- FileReader.nextLine(reader)
+    ) yield line
+    
     ...
 ```
 

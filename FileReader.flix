@@ -157,3 +157,18 @@ def testDoubleOpen(): Result[IOError, List[String]] \ IO = forM (
     // lines <- Ok("a" :: "b" :: Nil)
     lines <- FileReader.nextLine(reader)
 ) yield lines :: Nil
+
+def testReadingLines(): List[String] \ IO = 
+    // Open your file (e.g. encoded in utf8) through the FileReader
+    let reader = FileReader.buildFromPath("utf8.test", Encoding.UTF_8);
+    
+    // Read all lines
+    FileReader.readLinesWith(reader)
+
+
+def anotherWay(): Result[IOError, String] \ IO = 
+    forM(
+        file <- File.open("utf8.test", File.Mode.ReadOnly);
+        reader <- Ok(FileReader.buildFromFile(file, Encoding.UTF_8));
+        line <- FileReader.nextLine(reader)
+    ) yield line
