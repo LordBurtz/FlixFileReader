@@ -13,22 +13,29 @@ pub enum FileReader(##java.io.BufferedReader)
 
 mod FileReader {
 
+    /// Builds a BufferedReader from 
+    /// 
+    /// file: File - file to be opened in
+    /// encoding: Encoding - with a buffered Size of
+    /// buffSize: Option[Int32]
     ///
-    /// Builds a BufferedReader which reads a file from a given path while buffering as much as sz
+    pub def buildFromFileSized(file: File, encoding: Encoding, buffSize: Option[Int32]): FileReader \ IO = 
+        import java.io.RandomAccessFile.getFD(): ##java.io.FileDescriptor \ IO;
+        import new java.io.FileInputStream(##java.io.FileDescriptor): ##java.io.FileInputStream \ IO as fileInputStream;
+
+        let File.File(f) = file;
+        build_(checked_cast(fileInputStream(getFD(f))), encoding, buffSize)
+
     ///
-    /// path: String - should be a valid path
-    /// encoding: Encoding - the encoding the file should be read as
-    /// buffSize: Option[Int32] - the optional buffer size, if None uses a default-sized buffer
+    /// TODO: documentation
     ///
-    pub def build(path: String, encoding: Encoding, buffSize: Option[Int32]): FileReader \ IO = 
-        import new java.io.FileInputStream(String): ##java.io.FileInputStream \ IO as fileInputStream;
+    pub def buildFromFile(file: File, encoding: Encoding): FileReader \ IO = buildFromFileSized(file, encoding, None)
+
+    def build_(inputStr: ##java.io.InputStream, encoding: Encoding, buffSize: Option[Int32]): FileReader \ {} = 
         import new java.io.InputStreamReader(##java.io.InputStream, ##java.nio.charset.Charset): ##java.io.InputStreamReader \ {} as newInputStreamReader;
         
         let charset = Encoding.toStandardCharset(encoding);
-
-        let isReader = checked_cast(newInputStreamReader(
-        checked_cast(fileInputStream(path
-        )), charset));
+        let isReader = checked_cast(newInputStreamReader(inputStr, charset));
 
         match buffSize {
             case None =>
@@ -40,10 +47,23 @@ mod FileReader {
 
         } |> FileReader
 
+
+
+    ///
+    /// Builds a BufferedReader which reads a file from a given path while buffering as much as sz
+    ///
+    /// path: String - should be a valid path
+    /// encoding: Encoding - the encoding the file should be read as
+    /// buffSize: Option[Int32] - the optional buffer size, if None uses a default-sized buffer
+    ///
+    pub def buildFromPathSized(path: String, encoding: Encoding, buffSize: Option[Int32]): FileReader \ IO = 
+        import new java.io.FileInputStream(String): ##java.io.FileInputStream \ IO as fileInputStream;
+        build_(checked_cast(fileInputStream(path)), encoding, buffSize)
+
     ///
     /// Builds a BufferedReader which reads a file from a given path buffering as as much as sz
     ///
-    pub def buildReader(path: String, encoding: Encoding): FileReader \ IO = build(path, encoding, None)
+    pub def buildFromPath(path: String, encoding: Encoding): FileReader \ IO = buildFromPathSized(path, encoding, None)
 
     ///
     /// Reads all the available lines from 
@@ -51,12 +71,14 @@ mod FileReader {
     /// reader: FileReader - it should be created through .buildReader()
     ///
     /// @returns List containing all lines as String
-    /// if the reading fails, returns an empty list
+    /// if the reading fails (e.g. file closed), returns an empty list
+    ///
     pub def readLinesWith(reader: FileReader): List[String] \ IO = FileReader.readLinesWith_(reader, Nil)
    
+   /// helper method
     def readLinesWith_(reader: FileReader, result: List[String]): List[String] \ IO =
         match FileReader.nextLine(reader) {
-            case Err(_) => result
+            case Err(_) => Nil
             case Ok(line) => FileReader.readLinesWith_(reader, List.append(result, line :: Nil))
         }
 
@@ -73,6 +95,7 @@ mod FileReader {
         import java.io.BufferedReader.ready(): Bool \ IO;
         import java.io.BufferedReader.readLine(): String \ IO;
         let FileReader(fin) = reader;
+        // TODO: find more elegant way, is basically a monad 
         forM(
             readable <- IOError.tryCatch(_->{ready(fin)});
             result <- if (readable == false) Err(IOError.Generic("")) else 
@@ -107,6 +130,10 @@ mod FileReader {
             readIntoArray(fin, buff, offset, len)
         })
 
+    ///
+    /// Skips ahead
+    /// amount: Int64 - bytes
+    ///
     pub def skip(reader: FileReader, amount: Int64): Result[IOError, Int64] \ IO = 
         import java.io.BufferedReader.skip(Int64): Int64 \ IO;
         let FileReader(fin) = reader;
@@ -116,4 +143,13 @@ mod FileReader {
 }
 
 /// archaic test, refactor into own file
-// def test(): List[String] \ IO = FileReader.readLinesWith(FileReader.buildReader("utf8.test", Encoding.UTF_8))
+def test(): List[String] \ IO = FileReader.readLinesWith(FileReader.buildFromPath("utf8.test", Encoding.UTF_8))
+
+def testDoubleOpen(): Result[IOError, List[String]] \ IO = forM (
+    file <- File.open("utf8.test", File.Mode.ReadOnly);
+    _ <- File.close!(file);
+    // _ <- File.readChar!(file);
+    reader <- Ok(FileReader.buildFromFileSized(file, Encoding.UTF_8, None));
+    // lines <- Ok("a" :: "b" :: Nil)
+    lines <- FileReader.nextLine(reader)
+) yield lines :: Nil
